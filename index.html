@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Healthy Feed</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f5f8fa;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 500px;
+      margin-top: 20px;
+    }
+
+    .post {
+      background: white;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      cursor: pointer;
+    }
+
+    .topic {
+      font-size: 12px;
+      color: gray;
+    }
+
+    .header {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">📰 Healthy Feed</div>
+    <div id="feed"></div>
+  </div>
+
+  <script>
+    const API = "http://127.0.0.1:8000";
+
+    async function loadFeed() {
+      const res = await fetch(`${API}/feed/1`);
+      const data = await res.json();
+
+      const feed = document.getElementById("feed");
+      feed.innerHTML = "";
+
+      data.data.forEach(post => {
+        const div = document.createElement("div");
+        div.className = "post";
+
+        div.innerHTML = `
+          <div class="topic">${post.topic}</div>
+          <div>${post.content}</div>
+        `;
+
+        // 🔥 Track click interaction
+        div.onclick = async () => {
+          await fetch(`${API}/interact/1/${post.id}`, {
+            method: "POST"
+          });
+          alert("Interaction recorded!");
+        };
+
+        feed.appendChild(div);
+      });
+    }
+
+    loadFeed();
+  </script>
+</body>
+</html>
