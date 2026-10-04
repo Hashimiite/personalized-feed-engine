@@ -1,9 +1,9 @@
 from fastapi import WebSocket
-from typing import Dict, Set
+
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: Dict[int, Set[WebSocket]] = {}
+        self.active_connections: dict[int, set[WebSocket]] = {}
 
     async def connect(self, user_id: int, websocket: WebSocket):
         await websocket.accept()
@@ -20,7 +20,9 @@ class ConnectionManager:
         for ws in self.active_connections.get(user_id, set()):
             try:
                 await ws.send_json(feed_data)
-            except:
+            except Exception:
+                # A dropped socket shouldn't stop updates to the user's other connections
                 pass
+
 
 manager = ConnectionManager()

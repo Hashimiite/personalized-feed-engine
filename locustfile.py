@@ -1,5 +1,7 @@
-from locust import HttpUser, task, between
 import random
+
+from locust import HttpUser, between, task
+
 
 class FeedUser(HttpUser):
     wait_time = between(1, 3)  # users think between 1-3 seconds according to sample studies
@@ -18,4 +20,3 @@ class FeedUser(HttpUser):
         """Simulate clicking a random post (assumes post ids 1-50 exist)."""
         post_id = random.randint(1, 50)
         self.client.post(f"/interact/{self.user_id}/{post_id}", name="/interact/[user_id]/[post_id]")
-

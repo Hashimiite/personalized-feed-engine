@@ -1,11 +1,14 @@
 # models.py (unchanged except now using PostgreSQL)
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Float, ForeignKey, Integer, String
+
 from db import Base
+
 
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     interests = Column(String)
+
 
 class Post(Base):
     __tablename__ = "posts"
@@ -14,6 +17,7 @@ class Post(Base):
     topic = Column(String)
     quality = Column(Float)
     timestamp = Column(Float)
+
 
 class Interaction(Base):
     __tablename__ = "interactions"
