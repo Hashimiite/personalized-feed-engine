@@ -1,11 +1,13 @@
-from db import SessionLocal, engine, Base
-from models import User, Post
-import random, time
+import random
+import time
+
+from db import Base, SessionLocal, engine
+from models import Post, User
 
 Base.metadata.create_all(bind=engine)
 db = SessionLocal()
 
-# Clear existing data 
+# Clear existing data
 db.query(User).delete()
 db.query(Post).delete()
 
@@ -18,7 +20,7 @@ for i in range(50):
         content=f"post {i}",
         topic=random.choice(topics),
         quality=random.random(),
-        timestamp=time.time() - random.randint(0, 10000)
+        timestamp=time.time() - random.randint(0, 10000),
     )
     db.add(post)
 
