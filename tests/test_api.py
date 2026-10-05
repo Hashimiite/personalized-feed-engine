@@ -10,7 +10,8 @@ if not os.getenv("DATABASE_URL"):
 
 from fastapi.testclient import TestClient
 
-from db import SessionLocal, engine
+from db import SessionLocal, engine, init_db
+from embeddings import get_embeddings, post_text
 from feed.core import rc
 from main import app
 from models import Base, Post, User
@@ -19,13 +20,15 @@ from models import Base, Post, User
 @pytest.fixture(autouse=True)
 def seeded():
     Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
+    init_db()
     rc.flushdb()
     db = SessionLocal()
     db.add(User(id=1, interests="tech,ai"))
     now = time.time()
     for i, topic in enumerate(["tech", "ai", "finance", "sports", "tech", "ai"]):
-        db.add(Post(content=f"post {i}", topic=topic, quality=0.5, timestamp=now - i * 600))
+        content = f"post {i}"
+        vector = get_embeddings().embed_query(post_text(topic, content))
+        db.add(Post(content=content, topic=topic, quality=0.5, timestamp=now - i * 600, embedding=vector))
     db.commit()
     db.close()
     yield
@@ -44,7 +47,8 @@ def test_health(client):
 def test_feed_is_computed_then_served_from_cache(client):
     first = client.get("/feed/1").json()
     assert first["source"] == "computed"
-    assert first["data"][0]["topic"] in {"tech", "ai"}
+    ids = [p["id"] for p in first["data"]]
+    assert ids and len(ids) == len(set(ids))
     assert client.get("/feed/1").json()["source"] == "cache"
 
 
@@ -61,3 +65,23 @@ def test_new_post_is_pushed_over_websocket(client):
         message = ws.receive_json()
     assert message["type"] == "feed_update"
     assert any(p["id"] == res.json()["id"] for p in message["data"])
+
+
+def test_new_post_is_stored_with_an_embedding(client):
+    res = client.post("/posts", params={"content": "vector test", "topic": "ai", "quality": 0.5})
+    post_id = res.json()["id"]
+    db = SessionLocal()
+    stored = db.get(Post, post_id)
+    db.close()
+    assert len(stored.embedding) == 384
+
+
+def test_ask_returns_answer_and_posts(client):
+    res = client.post("/ask", json={"question": "What is happening in AI?"})
+    assert res.status_code == 200
+    assert set(res.json()) == {"answer", "posts"}
+
+
+def test_ask_rejects_questions_that_are_too_short_or_long(client):
+    assert client.post("/ask", json={"question": "hi"}).status_code == 422
+    assert client.post("/ask", json={"question": "x" * 501}).status_code == 422

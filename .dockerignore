@@ -10,3 +10,4 @@ tests
 locustfile.py
 requirements-dev.txt
 *.md
+.models

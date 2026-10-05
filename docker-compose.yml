@@ -8,6 +8,9 @@ services:
       DATABASE_URL: postgresql://${DB_USER:-feed}:${DB_PASSWORD:-feed}@db:5432/${DB_NAME:-feed}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
+      # Optional: any LangChain chat model, e.g. anthropic:claude-haiku-4-5-20251001, plus its API key
+      LLM_MODEL: ${LLM_MODEL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     depends_on:
       db:
         condition: service_healthy
@@ -15,7 +18,7 @@ services:
         condition: service_healthy
 
   db:
-    image: postgres:17-alpine
+    image: pgvector/pgvector:pg17
     environment:
       POSTGRES_USER: ${DB_USER:-feed}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-feed}
