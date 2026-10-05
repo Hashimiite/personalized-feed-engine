@@ -3,7 +3,7 @@ from types import SimpleNamespace as NS
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
 
-from feed.assistant import build_assistant
+from feed.assistant import build_assistant, default_llm
 
 HITS = [
     (NS(id=1, topic="ai", content="Small language models match larger ones"), 0.82),
@@ -44,3 +44,24 @@ def test_llm_failure_falls_back_to_listing_posts():
     llm = BrokenModel(messages=iter([]))
     result = build_assistant(search, llm, min_similarity=0.5).invoke({"question": "What is new in AI?"})
     assert result["answer"].startswith("The most relevant posts are [1]")
+
+
+def test_llm_model_setting_loads_openai_chat_model(monkeypatch):
+    monkeypatch.setenv("LLM_MODEL", "openai:gpt-4o-mini")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-not-a-real-key")
+    default_llm.cache_clear()
+    try:
+        llm = default_llm()
+        assert type(llm).__name__ == "ChatOpenAI"
+        assert llm.model_name == "gpt-4o-mini"
+    finally:
+        default_llm.cache_clear()
+
+
+def test_no_llm_model_means_no_chat_model(monkeypatch):
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    default_llm.cache_clear()
+    try:
+        assert default_llm() is None
+    finally:
+        default_llm.cache_clear()

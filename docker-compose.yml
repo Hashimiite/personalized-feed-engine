@@ -8,8 +8,10 @@ services:
       DATABASE_URL: postgresql://${DB_USER:-feed}:${DB_PASSWORD:-feed}@db:5432/${DB_NAME:-feed}
       REDIS_HOST: redis
       REDIS_PORT: "6379"
-      # Optional: any LangChain chat model, e.g. anthropic:claude-haiku-4-5-20251001, plus its API key
+      # Optional: any LangChain chat model, e.g. openai:gpt-4o-mini or anthropic:claude-haiku-4-5-20251001,
+      # plus that provider's API key. Compose reads both from .env.
       LLM_MODEL: ${LLM_MODEL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     depends_on:
       db:
