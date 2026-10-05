@@ -31,7 +31,7 @@ retrieve (semantic search in pgvector)
    └── otherwise → generate: answer from the retrieved posts only, citing them as [id]
 ```
 
-Set `LLM_MODEL` to any LangChain chat model, for example `anthropic:claude-haiku-4-5-20251001` with `ANTHROPIC_API_KEY`, to get written answers. Without one, or if the model call fails, the assistant lists the most relevant posts, so the endpoint always responds.
+Set `LLM_MODEL` to any LangChain chat model in `.env` to get written answers, for example `openai:gpt-4o-mini` with `OPENAI_API_KEY`, or `anthropic:claude-haiku-4-5-20251001` with `ANTHROPIC_API_KEY`. Docker Compose passes both through to the API. Without one, or if the model call fails, the assistant lists the most relevant posts, so the endpoint always responds.
 
 The 0.5 threshold was calibrated on the seeded posts: related questions score 0.59 and above, while unrelated ones (recipes, car repair, weather) stay at 0.455 or below.
 
@@ -70,7 +70,8 @@ Open `index.html` in a browser for a simple feed UI. Stop everything with `docke
 |---|---|---|
 | `DATABASE_URL` | built from `DB_*` | Postgres with the pgvector extension |
 | `REDIS_HOST`, `REDIS_PORT` | `localhost`, `6379` | Feed cache |
-| `LLM_MODEL` | unset | LangChain chat model for `/ask` answers |
+| `LLM_MODEL` | unset | LangChain chat model for `/ask` answers, e.g. `openai:gpt-4o-mini` |
+| `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` | unset | Key for the provider named in `LLM_MODEL` |
 | `ASK_MIN_SIMILARITY` | `0.5` | Similarity a post needs to count as relevant |
 | `EMBEDDINGS` | real model | Set to `fake` for LangChain's deterministic test embeddings |
 
