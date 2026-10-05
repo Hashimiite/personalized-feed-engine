@@ -19,8 +19,10 @@ log = logging.getLogger(__name__)
 MIN_SIMILARITY = float(os.getenv("ASK_MIN_SIMILARITY", "0.5"))
 TOP_K = 5
 SYSTEM_PROMPT = (
-    "Answer the question using only the numbered posts provided. Cite posts by their number in "
-    "square brackets, like [3]. If the posts do not answer the question, say so in one sentence."
+    "Answer the question directly using only the numbered posts provided. Only start with yes or no "
+    "when the posts clearly support it. If the posts point in different directions, say so and give "
+    "each side briefly. Cite posts by their number in square brackets, like [3]. If the posts do not "
+    "answer the question, say so in one sentence."
 )
 
 
