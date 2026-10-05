@@ -10,6 +10,7 @@ if not os.getenv("DATABASE_URL"):
 
 from db import SessionLocal, engine, init_db
 from embeddings import FastEmbedEmbeddings, post_text
+from feed.assistant import build_assistant
 from feed.core import generate_feed, semantic_search
 from models import Base, Interaction, Post, User
 
@@ -74,3 +75,13 @@ def test_semantic_search_finds_posts_by_meaning(real):
     top, similarity = results[0]
     assert "protein" in top.content
     assert similarity > results[1][1]
+
+
+def test_assistant_answers_related_questions_and_declines_unrelated_ones(real):
+    db = SessionLocal()
+    assistant = build_assistant(lambda q: semantic_search(db, q, k=3, embeddings=real))
+    hockey = assistant.invoke({"question": "Who won the hockey game?"})
+    bread = assistant.invoke({"question": "What is a good banana bread recipe?"})
+    db.close()
+    assert hockey["posts"] and all(p["topic"] == "sports" for p in hockey["posts"])
+    assert bread["posts"] == [] and bread["answer"].startswith("No posts")

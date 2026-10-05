@@ -1,4 +1,4 @@
-"""Seed one demo user and 48 posts with real headlines, embedded for semantic ranking."""
+"""Seed one demo user and 24 posts with real headlines, embedded for semantic ranking."""
 
 import random
 import time
@@ -55,7 +55,7 @@ def seed():
     db.query(User).delete()
     db.add(User(id=1, interests="machine learning, startups"))
 
-    rows = [(topic, text) for topic, texts in POSTS.items() for text in texts] * 2
+    rows = [(topic, text) for topic, texts in POSTS.items() for text in texts]
     vectors = get_embeddings().embed_documents([post_text(t, c) for t, c in rows])
     rng = random.Random(42)
     for (topic, content), vector in zip(rows, vectors, strict=True):

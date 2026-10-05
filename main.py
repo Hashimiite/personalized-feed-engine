@@ -1,16 +1,19 @@
 import uvicorn
 from fastapi import Depends, FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from crud.posts import create_post, get_all_posts
 from db import get_db, init_db
+from feed.assistant import TOP_K, build_assistant, default_llm
 from feed.core import (
     generate_feed,
     get_cached_feed,
     invalidate_feed,
     parse_tags,
     relevance,
+    semantic_search,
     set_cached_feed,
     user_profile,
 )
@@ -92,6 +95,17 @@ async def add_post(content: str, topic: str, quality: float, db: Session = Depen
     post = create_post(db, content, topic, quality)
     await notify_new_post(topic, post.id, db)
     return {"id": post.id}
+
+
+class AskRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=500)
+
+
+@app.post("/ask")
+def ask(body: AskRequest, db: Session = Depends(get_db)):
+    assistant = build_assistant(lambda q: semantic_search(db, q, k=TOP_K), default_llm())
+    result = assistant.invoke({"question": body.question.strip()})
+    return {"answer": result["answer"], "posts": result.get("posts", [])}
 
 
 @app.get("/posts")

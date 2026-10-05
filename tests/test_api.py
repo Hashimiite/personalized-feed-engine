@@ -74,3 +74,14 @@ def test_new_post_is_stored_with_an_embedding(client):
     stored = db.get(Post, post_id)
     db.close()
     assert len(stored.embedding) == 384
+
+
+def test_ask_returns_answer_and_posts(client):
+    res = client.post("/ask", json={"question": "What is happening in AI?"})
+    assert res.status_code == 200
+    assert set(res.json()) == {"answer", "posts"}
+
+
+def test_ask_rejects_questions_that_are_too_short_or_long(client):
+    assert client.post("/ask", json={"question": "hi"}).status_code == 422
+    assert client.post("/ask", json={"question": "x" * 501}).status_code == 422
