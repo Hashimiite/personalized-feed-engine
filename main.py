@@ -5,10 +5,18 @@ from sqlalchemy.orm import Session
 
 from crud.posts import create_post, get_all_posts
 from db import get_db, init_db
-from feed.core import generate_feed, get_cached_feed, invalidate_feed, set_cached_feed
+from feed.core import (
+    generate_feed,
+    get_cached_feed,
+    invalidate_feed,
+    parse_tags,
+    relevance,
+    set_cached_feed,
+    user_profile,
+)
 from feed.interactions import router as interaction_router
 from feed.websocket import manager
-from models import User
+from models import Post, User
 
 init_db()
 
@@ -54,10 +62,20 @@ def get_feed(user_id: int, db: Session = Depends(get_db)):
     return {"source": "computed", "data": feed_data}
 
 
+NOTIFY_MIN_SIMILARITY = 0.55
+
+
 @app.post("/notify_new_post")
 async def notify_new_post(topic: str, post_id: int, db: Session = Depends(get_db)):
-    # Find all users interested in this topic
-    users = db.query(User).filter(User.interests.contains(topic)).all()
+    # Notify users who listed the topic or whose profile is semantically close to the new post
+    post = db.get(Post, post_id)
+    # ponytail: scans every user; switch to a pgvector query on stored profiles once users grow
+    users = [
+        user
+        for user in db.query(User).all()
+        if topic in parse_tags(user.interests)
+        or relevance(user_profile(db, user), post.embedding if post else None) >= NOTIFY_MIN_SIMILARITY
+    ]
     for user in users:
         # Invalidate cache
         invalidate_feed(user.id)

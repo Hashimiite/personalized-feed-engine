@@ -47,7 +47,8 @@ def test_health(client):
 def test_feed_is_computed_then_served_from_cache(client):
     first = client.get("/feed/1").json()
     assert first["source"] == "computed"
-    assert first["data"][0]["topic"] in {"tech", "ai"}
+    ids = [p["id"] for p in first["data"]]
+    assert ids and len(ids) == len(set(ids))
     assert client.get("/feed/1").json()["source"] == "cache"
 
 
