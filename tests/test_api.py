@@ -10,7 +10,8 @@ if not os.getenv("DATABASE_URL"):
 
 from fastapi.testclient import TestClient
 
-from db import SessionLocal, engine
+from db import SessionLocal, engine, init_db
+from embeddings import get_embeddings, post_text
 from feed.core import rc
 from main import app
 from models import Base, Post, User
@@ -19,13 +20,15 @@ from models import Base, Post, User
 @pytest.fixture(autouse=True)
 def seeded():
     Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
+    init_db()
     rc.flushdb()
     db = SessionLocal()
     db.add(User(id=1, interests="tech,ai"))
     now = time.time()
     for i, topic in enumerate(["tech", "ai", "finance", "sports", "tech", "ai"]):
-        db.add(Post(content=f"post {i}", topic=topic, quality=0.5, timestamp=now - i * 600))
+        content = f"post {i}"
+        vector = get_embeddings().embed_query(post_text(topic, content))
+        db.add(Post(content=content, topic=topic, quality=0.5, timestamp=now - i * 600, embedding=vector))
     db.commit()
     db.close()
     yield
@@ -61,3 +64,12 @@ def test_new_post_is_pushed_over_websocket(client):
         message = ws.receive_json()
     assert message["type"] == "feed_update"
     assert any(p["id"] == res.json()["id"] for p in message["data"])
+
+
+def test_new_post_is_stored_with_an_embedding(client):
+    res = client.post("/posts", params={"content": "vector test", "topic": "ai", "quality": 0.5})
+    post_id = res.json()["id"]
+    db = SessionLocal()
+    stored = db.get(Post, post_id)
+    db.close()
+    assert len(stored.embedding) == 384

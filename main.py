@@ -4,14 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from crud.posts import create_post, get_all_posts
-from db import engine, get_db
+from db import get_db, init_db
 from feed.core import generate_feed, get_cached_feed, invalidate_feed, set_cached_feed
 from feed.interactions import router as interaction_router
 from feed.websocket import manager
-from models import Base, User
+from models import User
 
-# Create tables
-Base.metadata.create_all(bind=engine)
+init_db()
 
 app = FastAPI()
 app.add_middleware(

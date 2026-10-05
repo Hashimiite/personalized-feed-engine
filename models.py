@@ -1,7 +1,8 @@
-# models.py (unchanged except now using PostgreSQL)
+from pgvector.sqlalchemy import VECTOR
 from sqlalchemy import Column, Float, ForeignKey, Integer, String
 
 from db import Base
+from embeddings import DIM
 
 
 class User(Base):
@@ -17,6 +18,7 @@ class Post(Base):
     topic = Column(String)
     quality = Column(Float)
     timestamp = Column(Float)
+    embedding = Column(VECTOR(DIM))
 
 
 class Interaction(Base):
